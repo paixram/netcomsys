@@ -44,6 +44,7 @@ func enviarSegmentos(segmentos []Segmento, conn net.Conn) int {
 		}
 
 		// Enviar segmento
+		//fmt.Printf("Segmento nevciado: %d|%s|%s\n", segmento.NumeroSecuencia, segmento.Datos, segmento.Checksum)
 		_, err := fmt.Fprintf(conn, "%d|%s|%s\n", segmento.NumeroSecuencia, segmento.Datos, segmento.Checksum)
 		if err != nil {
 			logMensaje(fmt.Sprintf("Error enviando segmento %d: %v", segmento.NumeroSecuencia, err))

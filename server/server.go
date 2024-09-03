@@ -30,18 +30,28 @@ func logMensaje(mensaje string) {
 	timestamp := time.Now().Format("15:04")
 	fmt.Printf("[ + ] %s %s\n", timestamp, mensaje)
 }
-
 func recibirSegmentos(conn net.Conn) ([]Segmento, map[int]bool, int, error) {
 	var segmentos []Segmento
 	segmentosRecibidos := make(map[int]bool) // Rastrea los segmentos recibidos
-	scanner := bufio.NewScanner(conn)
+	reader := bufio.NewReader(conn)
 	paquetesRecibidosCorrectamente := 0
 
-	for scanner.Scan() {
-		line := scanner.Text()
+	for {
+		line, err := reader.ReadString('\n') // Leer hasta el final de la línea
+		if err != nil {
+			if err.Error() == "EOF" {
+				break
+			}
+			fmt.Println("Error al leer desde la conexión:", err)
+			return nil, nil, 0, err
+		}
+
+		// Eliminar el salto de línea final
+		line = strings.TrimSpace(line)
+
 		parts := strings.Split(line, "|")
 		if len(parts) != 3 {
-			fmt.Println("Formato de segmento incorrecto:", line)
+			logMensaje(fmt.Sprintf("Formato de segmento incorrecto: %s", line))
 			continue
 		}
 
@@ -66,10 +76,6 @@ func recibirSegmentos(conn net.Conn) ([]Segmento, map[int]bool, int, error) {
 		}
 	}
 
-	if err := scanner.Err(); err != nil {
-		return nil, nil, 0, err
-	}
-
 	return segmentos, segmentosRecibidos, paquetesRecibidosCorrectamente, nil
 }
 
@@ -91,13 +97,13 @@ func guardarArchivo(segmentos []Segmento, filePath string) error {
 }
 
 func main() {
-	ln, err := net.Listen("tcp", "127.0.0.1:8080")
+	ln, err := net.Listen("tcp", "127.0.0.1:9080")
 	if err != nil {
 		fmt.Println("Error al iniciar el servidor:", err)
 		return
 	}
 	defer ln.Close()
-	fmt.Println("Servidor escuchando en el puerto 8080...")
+	fmt.Println("Servidor escuchando en el puerto 9080...")
 
 	conn, err := ln.Accept()
 	if err != nil {
